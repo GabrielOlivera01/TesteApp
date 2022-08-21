@@ -1,0 +1,144 @@
+﻿@page "/"
+@using Site.Models
+@using System.Threading;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Threading.Tasks
+@inject HttpClient Http
+@inject NavigationManager uriHelper;
+
+<PageTitle>Index</PageTitle>
+
+<section>
+    <h1 class="display-6">Tarefas Pendentes (@Tarefas?.Count(Tarefa => !Tarefa.IsDone))</h1>
+    <div class="overflow-auto mb-4" style="height: 180px">
+        <ul class="list-unstyled">
+            @foreach (var tarefaPendente in Tarefas)
+            {
+                if (tarefaPendente.IsDone == false)
+                {
+                    <li>
+                        <input class="form-check-input" type="checkbox" @bind="tarefaPendente.IsDone" @onclick="() => ConcluirTarefa(tarefaPendente.Id)" />
+                        <input class="border border-secondary rounded mb-2" type="text" value="@tarefaPendente.Name"/>
+                        <button class="border border-secondary rounded mb-2">
+                            <a class="text-dark" href="/Tarefas/Editar/@tarefaPendente.Id">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                                </svg>
+                            </a>
+                        </button>
+                        <button class="border border-secondary rounded mb-2" @onclick="() => Remover(tarefaPendente.Id)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
+                            </svg>
+                        </button>
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+</section>
+<section>
+    <h1 class="display-6">Tarefas Concluídas (@Tarefas?.Count(Tarefa => Tarefa.IsDone))</h1>
+    <div class="overflow-auto mb-4" style="height: 180px">
+        <ul>
+            @foreach (var tarefaConcluida in Tarefas)
+            {
+                <li>
+                    <span>@tarefaConcluida.Name</span>
+                </li>
+            }
+        </ul>
+    </div>
+</section>
+<section>
+    <input class="border border-secondary rounded" type="text" placeholder="Nova tarefa" @bind="nomeNovaTarefa" />
+    <button class="border border-secondary rounded" @onclick="Inserir">Adicionar</button>
+</section>
+<section>
+    <p class="mt-2 mb-0 text-danger">@alert</p>
+</section>
+
+@code {
+    private List<Tarefa>? Tarefas;
+    
+    private string alert = "";
+
+    private void RecarregaPagina()
+    {
+        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+    }
+
+    //GET: Tras uma lista com todas as tarefas cadastrada na tabela Tarefas do banco de dados ApiContext.
+    protected override async Task OnInitializedAsync()
+    {
+        Tarefas = await Http.GetFromJsonAsync<List<Tarefa>>("https://localhost:7212/api/Tarefas");
+    }
+
+    //Validação de duplicidade: Verifica se já tem uma tarefa pendente com o mesmo nome.
+    public bool VerificaTarefa()
+    {
+        bool tarefaExiste = false;
+
+        foreach (var tarefa in Tarefas)
+        {
+            if (tarefa.IsDone == false)
+            {
+                if (tarefa.Name == nomeNovaTarefa)
+                {
+                    return tarefaExiste = true;
+                }
+            }
+        }
+
+        return tarefaExiste;
+    }
+
+    //POST: Insere uma nova tarefa na tabela Tarefas no banco de dados ApiContext.
+    private string? nomeNovaTarefa;
+    private async Task Inserir()
+    {
+        if (!string.IsNullOrWhiteSpace(nomeNovaTarefa))
+        {
+            bool tarefaExiste = VerificaTarefa();
+
+            if (tarefaExiste != true)
+            {
+                var novaTarefa = new Tarefa {
+                    Name = nomeNovaTarefa,
+                    IsDone = false
+                };
+
+                await Http.PostAsJsonAsync("https://localhost:7212/api/Tarefas", novaTarefa);
+                nomeNovaTarefa = null;
+
+                RecarregaPagina();
+            }
+            else
+            {
+                alert = "Já existe uma tarefa pendente com este nome";
+            }
+
+        }
+        else
+        {
+            alert = "O nome da tarefa não pode ser vazio";
+        }
+    }
+
+    //PUT: Conclui a tarefa que estava na lista 'Tarefas Pendentes' alterando o valor de IsDone no banco para true.
+    private async Task ConcluirTarefa(int id) {
+
+        await Http.PutAsJsonAsync($"https://localhost:7212/api/Tarefas/ConcluirTarefa/{id}", Tarefas);
+    }
+
+    //DELETE: Remove a tarefa da lista 'Tarefas Pendentes' e do banco de dados.
+    private async Task Remover(int id)
+    {
+        await Http.DeleteAsync($"https://localhost:7212/api/Tarefas/{id}");
+
+        RecarregaPagina();
+    }
+
+}

@@ -1,0 +1,84 @@
+﻿@page "/Tarefas/Editar/{id:int}"
+@using Site.Models
+@inject HttpClient Http
+@inject NavigationManager navigation
+
+<PageTitle>Edição</PageTitle>
+
+<h1 class="display-6">Editar Tarefa</h1>
+
+<section>
+    <input type="text" @bind="@inputValue" @oninput="OnInputEvent" />
+    <input class="btn btn-primary" type="button" value="Editar" @onclick="AtualizaTarefa"/>
+    <input class="btn btn-secondary" type="button" value="Voltar" @onclick="CancelaAtualizacao" />
+</section>
+<section>
+    <p class="mt-2 text-danger">@alert</p>
+</section>
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private List<Tarefa>? Tarefas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tarefas = await Http.GetFromJsonAsync<List<Tarefa>>("https://localhost:7212/api/Tarefas");
+    }
+
+    private string? alert = "";
+
+    private string? inputValue = "";
+
+    private void OnInputEvent(ChangeEventArgs changeEvent)
+    {
+        inputValue = (string)changeEvent.Value;
+    }
+
+    private bool VerificaNomeAtualizacao()
+    {
+        bool nomeJaExistente = false;
+
+        foreach (var tarefaExistente in Tarefas)
+        {
+            if (tarefaExistente.IsDone == false && tarefaExistente.Name == inputValue)
+            {
+                return nomeJaExistente = true;
+            }
+        }
+
+        return nomeJaExistente;
+    }
+
+    private async Task AtualizaTarefa()
+    {
+        if (!string.IsNullOrEmpty(inputValue))
+        {
+            bool nomeExistente = VerificaNomeAtualizacao();
+
+            if (nomeExistente == false)
+            {
+                var tarefaEditada = new Tarefa();
+                tarefaEditada.Id = id;
+                tarefaEditada.Name = inputValue;
+
+                await Http.PutAsJsonAsync($"https://localhost:7212/api/Tarefas/{id}", tarefaEditada);
+
+                navigation.NavigateTo("/");
+            }
+            else
+            {
+                alert = "Já existe uma tarefa pendente com este nome";
+            }
+        }
+        else
+        {
+            alert = "O nome da tarefa não pode ser vazio";
+        }
+    }
+
+    private void CancelaAtualizacao()
+    {
+        navigation.NavigateTo("/");
+    }
+}
