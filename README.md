@@ -1,6 +1,6 @@
 # TesteApp
 
-Verbo Http|Ação|Endpoint
+Verbo Http|Descrição|Endpoint
 ---|---|---
 GET|Trazer uma lista com todas as tarefas o Blazor faz uma requisição para o endpoint|api/Tarefas
 GET|Trazer uma lista com todas as tarefas concluídas o Blazor faz uma requisição para o endpoint|api/Tarefas/Concluidas
