@@ -45,9 +45,12 @@
         <ul>
             @foreach (var tarefaConcluida in Tarefas)
             {
-                <li>
-                    <span>@tarefaConcluida.Name</span>
-                </li>
+                if (tarefaConcluida.IsDone == true)
+                {
+                    <li>
+                        <span>@tarefaConcluida.Name</span>
+                    </li>
+                }
             }
         </ul>
     </div>
@@ -61,8 +64,8 @@
 </section>
 
 @code {
-    private List<Tarefa>? Tarefas;
-    
+    private List<Tarefa> Tarefas = new ();
+
     private string alert = "";
 
     private void RecarregaPagina()
@@ -85,7 +88,9 @@
         {
             if (tarefa.IsDone == false)
             {
-                if (tarefa.Name == nomeNovaTarefa)
+                nomeTarefaExistenteUpper = tarefa.Name?.ToUpper().Trim();
+
+                if (nomeTarefaExistenteUpper == nomeNovaTarefaUpper)
                 {
                     return tarefaExiste = true;
                 }
@@ -97,12 +102,17 @@
 
     //POST: Insere uma nova tarefa na tabela Tarefas no banco de dados ApiContext.
     private string? nomeNovaTarefa;
+    private string? nomeNovaTarefaUpper;
+    private string? nomeTarefaExistenteUpper;
+
     private async Task Inserir()
     {
         if (!string.IsNullOrWhiteSpace(nomeNovaTarefa))
         {
-            bool tarefaExiste = VerificaTarefa();
+            nomeNovaTarefaUpper = nomeNovaTarefa.ToUpper().Trim();
 
+            bool tarefaExiste = VerificaTarefa();
+            
             if (tarefaExiste != true)
             {
                 var novaTarefa = new Tarefa {

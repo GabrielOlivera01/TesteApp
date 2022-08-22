@@ -19,7 +19,7 @@
 @code {
     [Parameter] public int id { get; set; }
 
-    private List<Tarefa>? Tarefas;
+    private List<Tarefa>? Tarefas = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -32,8 +32,12 @@
 
     private void OnInputEvent(ChangeEventArgs changeEvent)
     {
-        inputValue = (string)changeEvent.Value;
+        inputValue = (string?)changeEvent.Value;
     }
+
+
+    private string? nomeTarefaAtualizacaoUpper;
+    private string? nomeTarefaExistenteUpper;
 
     private bool VerificaNomeAtualizacao()
     {
@@ -41,7 +45,11 @@
 
         foreach (var tarefaExistente in Tarefas)
         {
-            if (tarefaExistente.IsDone == false && tarefaExistente.Name == inputValue)
+            nomeTarefaAtualizacaoUpper = inputValue?.ToUpper().Trim();
+            nomeTarefaExistenteUpper = tarefaExistente.Name?.ToUpper().Trim();
+
+
+            if (tarefaExistente.IsDone == false && nomeTarefaExistenteUpper == nomeTarefaAtualizacaoUpper)
             {
                 return nomeJaExistente = true;
             }
@@ -60,7 +68,7 @@
             {
                 var tarefaEditada = new Tarefa();
                 tarefaEditada.Id = id;
-                tarefaEditada.Name = inputValue;
+                tarefaEditada.Name = inputValue.Trim();
 
                 await Http.PutAsJsonAsync($"https://localhost:7212/api/Tarefas/{id}", tarefaEditada);
 
