@@ -45,9 +45,12 @@
         <ul>
             @foreach (var tarefaConcluida in Tarefas)
             {
-                <li>
-                    <span>@tarefaConcluida.Name</span>
-                </li>
+                if (tarefaConcluida.IsDone == true)
+                {
+                    <li>
+                        <span>@tarefaConcluida.Name</span>
+                    </li>
+                }
             }
         </ul>
     </div>
